@@ -1,0 +1,46 @@
+-- AgencyOS storage bucket for the Files module.
+-- Run AFTER 0001_init.sql. Safe to re-run.
+
+-- =========================================================
+-- BUCKET
+-- =========================================================
+insert into storage.buckets (id, name, public)
+values ('files', 'files', false)
+on conflict (id) do nothing;
+
+-- =========================================================
+-- RLS POLICIES — files are namespaced by owner uuid prefix.
+-- A file's storage path looks like:   <auth.uid>/<file_id>-<name>
+-- =========================================================
+
+drop policy if exists "files_select_own" on storage.objects;
+create policy "files_select_own" on storage.objects
+  for select
+  using (
+    bucket_id = 'files'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+drop policy if exists "files_insert_own" on storage.objects;
+create policy "files_insert_own" on storage.objects
+  for insert
+  with check (
+    bucket_id = 'files'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+drop policy if exists "files_update_own" on storage.objects;
+create policy "files_update_own" on storage.objects
+  for update
+  using (
+    bucket_id = 'files'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+drop policy if exists "files_delete_own" on storage.objects;
+create policy "files_delete_own" on storage.objects
+  for delete
+  using (
+    bucket_id = 'files'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );

@@ -16,9 +16,12 @@ import {
 import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { TaskDialog } from "@/components/kanban/task-dialog";
 import { ProjectDetailActions } from "@/components/projects/project-detail-actions";
+import { FileRow } from "@/components/files/file-row";
+import { FileUploadButton } from "@/components/files/file-upload-button";
 import { listClients } from "@/lib/data/clients";
 import { getProjectById } from "@/lib/data/projects";
 import { getClientById } from "@/lib/data/clients";
+import { getUserId } from "@/lib/data/auth";
 import { listTasksByProject } from "@/lib/data/tasks";
 import { listNotesByProject } from "@/lib/data/notes";
 import { listFilesByProject } from "@/lib/data/files";
@@ -33,12 +36,13 @@ export default async function ProjectDetailPage({
   const project = await getProjectById(id);
   if (!project) notFound();
 
-  const [client, tasks, notes, files, clients] = await Promise.all([
+  const [client, tasks, notes, files, clients, ownerId] = await Promise.all([
     project.client_id ? getClientById(project.client_id) : Promise.resolve(null),
     listTasksByProject(project.id),
     listNotesByProject(project.id),
     listFilesByProject(project.id),
     listClients(),
+    getUserId(),
   ]);
 
   return (
@@ -164,27 +168,27 @@ export default async function ProjectDetailPage({
 
           <TabsContent value="files" className="mt-4">
             <Card>
-              <CardContent>
+              <CardContent className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium">Project files</p>
+                  {ownerId && (
+                    <FileUploadButton
+                      ownerId={ownerId}
+                      projectId={project.id}
+                      clientId={project.client_id ?? null}
+                      size="sm"
+                      variant="outline"
+                    />
+                  )}
+                </div>
                 {files.length === 0 ? (
                   <p className="py-6 text-center text-sm text-muted-foreground">
-                    No files uploaded.
+                    No files uploaded yet.
                   </p>
                 ) : (
                   <ul className="divide-y divide-border">
                     {files.map((f) => (
-                      <li key={f.id} className="flex items-center justify-between py-2.5">
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-medium">{f.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {f.size_bytes
-                              ? (f.size_bytes / 1024 / 1024).toFixed(2) + " MB"
-                              : ""}
-                          </p>
-                        </div>
-                        <Button size="sm" variant="ghost">
-                          Download
-                        </Button>
-                      </li>
+                      <FileRow key={f.id} file={f} />
                     ))}
                   </ul>
                 )}

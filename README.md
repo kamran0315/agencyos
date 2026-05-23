@@ -48,16 +48,17 @@ Visit http://localhost:3000 — you'll land on the login page.
 ## Going live with Supabase
 
 1. Create a new Supabase project.
-2. Open the SQL editor and run `supabase/migrations/0001_init.sql`.
-3. Add to `.env.local`:
+2. SQL editor: run `supabase/migrations/0001_init.sql` (schema + RLS).
+3. SQL editor: run `supabase/migrations/0002_storage.sql` (creates the
+   `files` storage bucket and per-user RLS policies).
+4. Add to `.env.local` (or Vercel env vars):
    ```
    NEXT_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
    NEXT_PUBLIC_SUPABASE_ANON_KEY=...
    ```
-4. Create your first admin user in the Supabase Auth dashboard — the
+5. Create your first admin user in the Supabase Auth dashboard — the
    `handle_new_user` trigger creates a matching profile row automatically.
-5. Replace mock-data reads in pages with real Supabase queries
-   (e.g. `supabase.from('projects').select()`).
+6. (Optional) seed demo data: SQL editor → paste `supabase/seed.sql` → Run.
 
 ## Going live with AI
 

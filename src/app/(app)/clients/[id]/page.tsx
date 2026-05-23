@@ -20,10 +20,13 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import { FileRow } from "@/components/files/file-row";
+import { FileUploadButton } from "@/components/files/file-upload-button";
 import { getClientById } from "@/lib/data/clients";
 import { listProjectsByClient } from "@/lib/data/projects";
 import { listNotesByClient } from "@/lib/data/notes";
 import { listFilesByClient } from "@/lib/data/files";
+import { getUserId } from "@/lib/data/auth";
 import { formatCurrency, getInitials } from "@/lib/utils";
 import { format } from "date-fns";
 
@@ -36,10 +39,11 @@ export default async function ClientDetailPage({
   const client = await getClientById(id);
   if (!client) notFound();
 
-  const [projects, notes, files] = await Promise.all([
+  const [projects, notes, files, ownerId] = await Promise.all([
     listProjectsByClient(client.id),
     listNotesByClient(client.id),
     listFilesByClient(client.id),
+    getUserId(),
   ]);
 
   const totalValue = projects.reduce((s, p) => s + (p.budget ?? 0), 0);
@@ -160,7 +164,18 @@ export default async function ClientDetailPage({
 
             <TabsContent value="files" className="mt-4">
               <Card>
-                <CardContent>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium">Client files</p>
+                    {ownerId && (
+                      <FileUploadButton
+                        ownerId={ownerId}
+                        clientId={client.id}
+                        size="sm"
+                        variant="outline"
+                      />
+                    )}
+                  </div>
                   {files.length === 0 ? (
                     <p className="py-6 text-center text-sm text-muted-foreground">
                       No files uploaded yet.
@@ -168,17 +183,7 @@ export default async function ClientDetailPage({
                   ) : (
                     <ul className="divide-y divide-border">
                       {files.map((f) => (
-                        <li key={f.id} className="flex items-center justify-between py-2.5">
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-medium">{f.name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {f.size_bytes ? (f.size_bytes / 1024 / 1024).toFixed(2) + " MB" : ""}
-                            </p>
-                          </div>
-                          <Button size="sm" variant="ghost">
-                            Download
-                          </Button>
-                        </li>
+                        <FileRow key={f.id} file={f} />
                       ))}
                     </ul>
                   )}
