@@ -1,6 +1,7 @@
 import { PageHeader } from "@/components/common/page-header";
 import { ProposalList } from "@/components/proposals/proposal-list";
 import { AIGeneratorDialog } from "@/components/proposals/ai-generator-dialog";
+import { ProposalFormDialog } from "@/components/proposals/proposal-form-dialog";
 import { listProposals } from "@/lib/data/proposals";
 
 export default async function ProposalsPage() {
@@ -12,6 +13,7 @@ export default async function ProposalsPage() {
         description="Reusable templates and AI-generated responses."
       >
         <AIGeneratorDialog />
+        <ProposalFormDialog />
       </PageHeader>
       <div className="p-6">
         <ProposalList proposals={proposals} />

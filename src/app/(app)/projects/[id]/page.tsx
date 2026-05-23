@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/tabs";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { TaskDialog } from "@/components/kanban/task-dialog";
+import { ProjectDetailActions } from "@/components/projects/project-detail-actions";
+import { listClients } from "@/lib/data/clients";
 import { getProjectById } from "@/lib/data/projects";
 import { getClientById } from "@/lib/data/clients";
 import { listTasksByProject } from "@/lib/data/tasks";
@@ -31,11 +33,12 @@ export default async function ProjectDetailPage({
   const project = await getProjectById(id);
   if (!project) notFound();
 
-  const [client, tasks, notes, files] = await Promise.all([
+  const [client, tasks, notes, files, clients] = await Promise.all([
     project.client_id ? getClientById(project.client_id) : Promise.resolve(null),
     listTasksByProject(project.id),
     listNotesByProject(project.id),
     listFilesByProject(project.id),
+    listClients(),
   ]);
 
   return (
@@ -47,6 +50,7 @@ export default async function ProjectDetailPage({
             All projects
           </Link>
         </Button>
+        <ProjectDetailActions project={project} clients={clients} />
         <TaskDialog projectId={project.id} />
       </PageHeader>
 

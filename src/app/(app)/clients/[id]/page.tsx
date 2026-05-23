@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProjectStatusBadge } from "@/components/common/status-badge";
+import { ClientDetailActions } from "@/components/clients/client-detail-actions";
 import {
   Tabs,
   TabsContent,
@@ -52,6 +53,7 @@ export default async function ClientDetailPage({
             All clients
           </Link>
         </Button>
+        <ClientDetailActions client={client} />
       </PageHeader>
 
       <div className="grid gap-4 p-6 lg:grid-cols-3">

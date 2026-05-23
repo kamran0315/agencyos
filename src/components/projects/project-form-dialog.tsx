@@ -23,25 +23,42 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { createProjectAction } from "@/lib/actions/projects";
+import {
+  createProjectAction,
+  updateProjectAction,
+} from "@/lib/actions/projects";
 import {
   PRIORITY_LABELS,
   PROJECT_STATUS_LABELS,
   type Client,
   type Priority,
+  type Project,
   type ProjectStatus,
 } from "@/lib/types";
 
 interface Props {
   trigger?: React.ReactNode;
   clients: Client[];
+  project?: Project;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function ProjectFormDialog({ trigger, clients }: Props) {
-  const [open, setOpen] = useState(false);
-  const [clientId, setClientId] = useState<string>("");
-  const [status, setStatus] = useState<ProjectStatus>("discussion");
-  const [priority, setPriority] = useState<Priority>("medium");
+export function ProjectFormDialog({
+  trigger,
+  clients,
+  project,
+  open: openProp,
+  onOpenChange,
+}: Props) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = openProp ?? internalOpen;
+  const setOpen = onOpenChange ?? setInternalOpen;
+  const isEdit = !!project;
+
+  const [clientId, setClientId] = useState<string>(project?.client_id ?? "");
+  const [status, setStatus] = useState<ProjectStatus>(project?.status ?? "discussion");
+  const [priority, setPriority] = useState<Priority>(project?.priority ?? "medium");
   const [pending, startTransition] = useTransition();
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -51,9 +68,11 @@ export function ProjectFormDialog({ trigger, clients }: Props) {
     formData.set("status", status);
     formData.set("priority", priority);
     startTransition(async () => {
-      const result = await createProjectAction(formData);
+      const result = isEdit
+        ? await updateProjectAction(project.id, formData)
+        : await createProjectAction(formData);
       if (result.ok) {
-        toast.success("Project created");
+        toast.success(isEdit ? "Project updated" : "Project created");
         setOpen(false);
       } else {
         toast.error(result.error);
@@ -63,25 +82,35 @@ export function ProjectFormDialog({ trigger, clients }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger ?? (
-          <Button>
-            <Plus className="size-4" />
-            New project
-          </Button>
-        )}
-      </DialogTrigger>
+      {trigger !== undefined && (
+        <DialogTrigger asChild>
+          {trigger ?? (
+            <Button>
+              <Plus className="size-4" />
+              New project
+            </Button>
+          )}
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-xl">
         <DialogHeader>
-          <DialogTitle>New project</DialogTitle>
+          <DialogTitle>{isEdit ? "Edit project" : "New project"}</DialogTitle>
           <DialogDescription>
-            Set the basics now. You can add tasks and notes after creation.
+            {isEdit
+              ? "Update project details, status, or budget."
+              : "Set the basics now. You can add tasks and notes after creation."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="grid gap-4">
           <div className="space-y-2">
             <Label htmlFor="title">Project title</Label>
-            <Input id="title" name="title" required placeholder="e.g. Marketing site rebuild" />
+            <Input
+              id="title"
+              name="title"
+              required
+              defaultValue={project?.title ?? ""}
+              placeholder="e.g. Marketing site rebuild"
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="client">Client</Label>
@@ -138,19 +167,44 @@ export function ProjectFormDialog({ trigger, clients }: Props) {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="budget">Budget (USD)</Label>
-              <Input id="budget" name="budget" type="number" placeholder="5000" />
+              <Input
+                id="budget"
+                name="budget"
+                type="number"
+                defaultValue={project?.budget ?? ""}
+                placeholder="5000"
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="deadline">Deadline</Label>
-              <Input id="deadline" name="deadline" type="date" />
+              <Input
+                id="deadline"
+                name="deadline"
+                type="date"
+                defaultValue={project?.deadline ?? ""}
+              />
             </div>
           </div>
+          {isEdit && (
+            <div className="space-y-2">
+              <Label htmlFor="progress">Progress (%)</Label>
+              <Input
+                id="progress"
+                name="progress"
+                type="number"
+                min={0}
+                max={100}
+                defaultValue={project.progress}
+              />
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
               name="description"
               rows={3}
+              defaultValue={project?.description ?? ""}
               placeholder="What's the goal of this project?"
             />
           </div>
@@ -159,7 +213,9 @@ export function ProjectFormDialog({ trigger, clients }: Props) {
               Cancel
             </Button>
             <Button type="submit" disabled={pending}>
-              {pending ? "Creating…" : "Create project"}
+              {pending
+                ? isEdit ? "Saving…" : "Creating…"
+                : isEdit ? "Save changes" : "Create project"}
             </Button>
           </DialogFooter>
         </form>

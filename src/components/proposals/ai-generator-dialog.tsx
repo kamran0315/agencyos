@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ProposalFormDialog } from "./proposal-form-dialog";
 
 export function AIGeneratorDialog({ trigger }: { trigger?: React.ReactNode }) {
   const [open, setOpen] = useState(false);
@@ -114,6 +115,12 @@ export function AIGeneratorDialog({ trigger }: { trigger?: React.ReactNode }) {
           <Button variant="ghost" onClick={() => setOpen(false)}>
             Close
           </Button>
+          {result && (
+            <ProposalFormDialog
+              initialBody={result}
+              trigger={<Button variant="outline">Save as proposal</Button>}
+            />
+          )}
           <Button onClick={handleGenerate} disabled={loading}>
             {loading && <Loader2 className="size-4 animate-spin" />}
             {result ? "Regenerate" : "Generate"}

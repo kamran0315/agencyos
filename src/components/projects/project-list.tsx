@@ -1,12 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
-import { format, isBefore, parseISO } from "date-fns";
-import { Calendar, FolderKanban, Search } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import { FolderKanban, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
 import {
   Select,
   SelectContent,
@@ -15,7 +11,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { EmptyState } from "@/components/common/empty-state";
-import { ProjectStatusBadge, PriorityBadge } from "@/components/common/status-badge";
+import { ProjectCard } from "./project-card";
+import { ProjectFormDialog } from "./project-form-dialog";
 import {
   PROJECT_STATUS_LABELS,
   type Project,
@@ -23,8 +20,6 @@ import {
   type Priority,
   type Client,
 } from "@/lib/types";
-import { ProjectFormDialog } from "./project-form-dialog";
-import { cn, formatCurrency } from "@/lib/utils";
 
 interface Props {
   projects: Project[];
@@ -109,57 +104,14 @@ export function ProjectList({ projects, clients }: Props) {
         />
       ) : (
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((p) => {
-            const client = p.client_id ? clientById[p.client_id] : null;
-            const due = p.deadline ? parseISO(p.deadline) : null;
-            const overdue = due ? isBefore(due, new Date()) && p.status !== "completed" : false;
-            return (
-              <Link key={p.id} href={`/projects/${p.id}`} className="block">
-                <Card className="h-full gap-4 transition-shadow hover:shadow-md">
-                  <div className="px-6">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold">{p.title}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {client?.company ?? client?.name ?? "No client"}
-                        </p>
-                      </div>
-                      <PriorityBadge priority={p.priority} />
-                    </div>
-                    {p.description && (
-                      <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">
-                        {p.description}
-                      </p>
-                    )}
-                  </div>
-                  <div className="px-6 space-y-2">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-muted-foreground">Progress</span>
-                      <span className="font-medium">{p.progress}%</span>
-                    </div>
-                    <Progress value={p.progress} />
-                  </div>
-                  <div className="flex items-center justify-between border-t border-border px-6 pt-3">
-                    <ProjectStatusBadge status={p.status} />
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      {p.budget && <span>{formatCurrency(p.budget)}</span>}
-                      {due && (
-                        <span
-                          className={cn(
-                            "inline-flex items-center gap-1",
-                            overdue && "text-destructive font-medium"
-                          )}
-                        >
-                          <Calendar className="size-3.5" />
-                          {format(due, "MMM d")}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </Card>
-              </Link>
-            );
-          })}
+          {filtered.map((p) => (
+            <ProjectCard
+              key={p.id}
+              project={p}
+              client={p.client_id ? clientById[p.client_id] : null}
+              clients={clients}
+            />
+          ))}
         </div>
       )}
     </div>

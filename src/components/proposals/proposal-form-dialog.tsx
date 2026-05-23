@@ -16,7 +16,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -24,23 +23,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createNoteAction, updateNoteAction } from "@/lib/actions/notes";
 import {
-  NOTE_CATEGORY_LABELS,
-  type Note,
-  type NoteCategory,
+  createProposalAction,
+  updateProposalAction,
+} from "@/lib/actions/proposals";
+import {
+  PROPOSAL_CATEGORY_LABELS,
+  type Proposal,
+  type ProposalCategory,
 } from "@/lib/types";
 
 interface Props {
   trigger?: React.ReactNode;
-  note?: Note;
+  proposal?: Proposal;
+  initialBody?: string;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }
 
-export function NoteFormDialog({
+export function ProposalFormDialog({
   trigger,
-  note,
+  proposal,
+  initialBody,
   open: openProp,
   onOpenChange,
 }: Props) {
@@ -48,10 +52,10 @@ export function NoteFormDialog({
   const open = openProp ?? internalOpen;
   const setOpen = onOpenChange ?? setInternalOpen;
   const [pending, startTransition] = useTransition();
-  const [category, setCategory] = useState<NoteCategory>(
-    note?.category ?? "internal"
+  const [category, setCategory] = useState<ProposalCategory>(
+    proposal?.category ?? "upwork"
   );
-  const isEdit = !!note;
+  const isEdit = !!proposal;
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -59,10 +63,10 @@ export function NoteFormDialog({
     formData.set("category", category);
     startTransition(async () => {
       const result = isEdit
-        ? await updateNoteAction(note.id, formData)
-        : await createNoteAction(formData);
+        ? await updateProposalAction(proposal.id, formData)
+        : await createProposalAction(formData);
       if (result.ok) {
-        toast.success(isEdit ? "Note updated" : "Note saved");
+        toast.success(isEdit ? "Proposal updated" : "Proposal saved");
         setOpen(false);
       } else {
         toast.error(result.error);
@@ -77,18 +81,18 @@ export function NoteFormDialog({
           {trigger ?? (
             <Button>
               <Plus className="size-4" />
-              New note
+              New proposal
             </Button>
           )}
         </DialogTrigger>
       )}
-      <DialogContent>
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit note" : "New note"}</DialogTitle>
+          <DialogTitle>{isEdit ? "Edit proposal" : "New proposal"}</DialogTitle>
           <DialogDescription>
             {isEdit
-              ? "Update this note's content or category."
-              : "Requirements, credentials, meeting recap — keep it organized by category."}
+              ? "Update this template's content, tags, or category."
+              : "Save a reusable template — Upwork, Fiverr, discovery, onboarding."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="grid gap-4">
@@ -98,53 +102,56 @@ export function NoteFormDialog({
               id="title"
               name="title"
               required
-              defaultValue={note?.title ?? ""}
-              placeholder="e.g. Hosting credentials"
+              defaultValue={proposal?.title ?? ""}
+              placeholder="e.g. Upwork — Next.js marketing site rebuild"
             />
           </div>
-          <div className="space-y-2">
-            <Label>Category</Label>
-            <Select value={category} onValueChange={(v) => setCategory(v as NoteCategory)}>
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {(Object.entries(NOTE_CATEGORY_LABELS) as [NoteCategory, string][]).map(
-                  ([k, v]) => (
-                    <SelectItem key={k} value={k}>
-                      {v}
-                    </SelectItem>
-                  )
-                )}
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>Category</Label>
+              <Select value={category} onValueChange={(v) => setCategory(v as ProposalCategory)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(Object.entries(PROPOSAL_CATEGORY_LABELS) as [ProposalCategory, string][]).map(
+                    ([k, v]) => (
+                      <SelectItem key={k} value={k}>
+                        {v}
+                      </SelectItem>
+                    )
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="tags">Tags (comma separated)</Label>
+              <Input
+                id="tags"
+                name="tags"
+                defaultValue={proposal?.tags.join(", ") ?? ""}
+                placeholder="nextjs, sanity, marketing-site"
+              />
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="body">Body</Label>
             <Textarea
               id="body"
               name="body"
-              rows={6}
-              defaultValue={note?.body ?? ""}
-              placeholder="Anything you want to remember…"
+              required
+              rows={12}
+              defaultValue={proposal?.body ?? initialBody ?? ""}
+              placeholder="The proposal copy. Use {{name}} or {{link}} as placeholders."
+              className="font-mono text-xs"
             />
-          </div>
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="pinned"
-              name="pinned"
-              defaultChecked={note?.pinned ?? false}
-            />
-            <Label htmlFor="pinned" className="font-normal">
-              Pin to top
-            </Label>
           </div>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
               Cancel
             </Button>
             <Button type="submit" disabled={pending}>
-              {pending ? "Saving…" : isEdit ? "Save changes" : "Save note"}
+              {pending ? "Saving…" : isEdit ? "Save changes" : "Save proposal"}
             </Button>
           </DialogFooter>
         </form>

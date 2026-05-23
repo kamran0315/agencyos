@@ -39,6 +39,48 @@ export async function createNoteAction(
   return { ok: true };
 }
 
+export async function updateNoteAction(
+  id: string,
+  formData: FormData
+): Promise<ActionResult> {
+  if (isDemoMode) {
+    revalidatePath("/notes");
+    return { ok: true };
+  }
+  const supabase = await createClient();
+  if (!supabase) return { ok: false, error: "Supabase not configured" };
+
+  const title = String(formData.get("title") ?? "").trim();
+  if (!title) return { ok: false, error: "Title is required" };
+
+  const { error } = await supabase
+    .from("notes")
+    .update({
+      title,
+      body: emptyToNull(formData.get("body")),
+      category: formData.get("category") as NoteCategory,
+      pinned: formData.get("pinned") === "on",
+    })
+    .eq("id", id);
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath("/notes");
+  return { ok: true };
+}
+
+export async function deleteNoteAction(id: string): Promise<ActionResult> {
+  if (isDemoMode) {
+    revalidatePath("/notes");
+    return { ok: true };
+  }
+  const supabase = await createClient();
+  if (!supabase) return { ok: false, error: "Supabase not configured" };
+  const { error } = await supabase.from("notes").delete().eq("id", id);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath("/notes");
+  return { ok: true };
+}
+
 function emptyToNull(v: FormDataEntryValue | null): string | null {
   const s = String(v ?? "").trim();
   return s === "" ? null : s;

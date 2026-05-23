@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Plus, Calendar as CalendarIcon } from "lucide-react";
+import { Plus, Calendar as CalendarIcon, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,7 +23,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createTaskAction, updateTaskAction } from "@/lib/actions/tasks";
+import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import {
+  createTaskAction,
+  deleteTaskAction,
+  updateTaskAction,
+} from "@/lib/actions/tasks";
 import {
   PRIORITY_LABELS,
   TASK_STATUS_LABELS,
@@ -150,13 +155,37 @@ export function TaskDialog({ projectId, task, trigger, defaultStatus = "todo" }:
               defaultValue={task?.due_date ?? ""}
             />
           </div>
-          <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={pending}>
-              {pending ? "Saving…" : task ? "Save changes" : "Create task"}
-            </Button>
+          <DialogFooter className="sm:justify-between">
+            <div>
+              {task && (
+                <ConfirmDialog
+                  trigger={
+                    <Button type="button" variant="ghost" size="sm" className="text-destructive">
+                      <Trash2 className="size-4" />
+                      Delete
+                    </Button>
+                  }
+                  title={`Delete "${task.title}"?`}
+                  description="This task will be permanently removed."
+                  confirmLabel="Delete task"
+                  destructive
+                  successMessage="Task deleted"
+                  onConfirm={async () => {
+                    const r = await deleteTaskAction(task.id, projectId);
+                    if (r.ok) setOpen(false);
+                    return r;
+                  }}
+                />
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={pending}>
+                {pending ? "Saving…" : task ? "Save changes" : "Create task"}
+              </Button>
+            </div>
           </DialogFooter>
         </form>
       </DialogContent>

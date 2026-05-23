@@ -79,6 +79,23 @@ export async function updateTaskAction(
   return { ok: true };
 }
 
+export async function deleteTaskAction(
+  taskId: string,
+  projectId: string
+): Promise<ActionResult> {
+  if (isDemoMode) {
+    revalidatePath(`/projects/${projectId}`);
+    return { ok: true };
+  }
+  const supabase = await createClient();
+  if (!supabase) return { ok: false, error: "Supabase not configured" };
+  const { error } = await supabase.from("tasks").delete().eq("id", taskId);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath(`/projects/${projectId}`);
+  revalidatePath("/tasks");
+  return { ok: true };
+}
+
 export async function moveTaskAction(
   taskId: string,
   newStatus: TaskStatus,

@@ -25,18 +25,58 @@ export async function createProposalAction(
   const body = String(formData.get("body") ?? "").trim();
   if (!title || !body) return { ok: false, error: "Title and body required" };
 
-  const tagsRaw = String(formData.get("tags") ?? "").trim();
-  const tags = tagsRaw ? tagsRaw.split(",").map((t) => t.trim()).filter(Boolean) : [];
-
   const { error } = await supabase.from("proposals").insert({
     owner_id: ownerId,
     title,
     body,
     category: (formData.get("category") as ProposalCategory) ?? "upwork",
-    tags,
+    tags: parseTags(formData.get("tags")),
   });
   if (error) return { ok: false, error: error.message };
 
+  revalidatePath("/proposals");
+  return { ok: true };
+}
+
+export async function updateProposalAction(
+  id: string,
+  formData: FormData
+): Promise<ActionResult> {
+  if (isDemoMode) {
+    revalidatePath("/proposals");
+    return { ok: true };
+  }
+  const supabase = await createClient();
+  if (!supabase) return { ok: false, error: "Supabase not configured" };
+
+  const title = String(formData.get("title") ?? "").trim();
+  const body = String(formData.get("body") ?? "").trim();
+  if (!title || !body) return { ok: false, error: "Title and body required" };
+
+  const { error } = await supabase
+    .from("proposals")
+    .update({
+      title,
+      body,
+      category: formData.get("category") as ProposalCategory,
+      tags: parseTags(formData.get("tags")),
+    })
+    .eq("id", id);
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath("/proposals");
+  return { ok: true };
+}
+
+export async function deleteProposalAction(id: string): Promise<ActionResult> {
+  if (isDemoMode) {
+    revalidatePath("/proposals");
+    return { ok: true };
+  }
+  const supabase = await createClient();
+  if (!supabase) return { ok: false, error: "Supabase not configured" };
+  const { error } = await supabase.from("proposals").delete().eq("id", id);
+  if (error) return { ok: false, error: error.message };
   revalidatePath("/proposals");
   return { ok: true };
 }
@@ -45,7 +85,6 @@ export async function incrementProposalUseAction(id: string) {
   if (isDemoMode) return;
   const supabase = await createClient();
   if (!supabase) return;
-  // Two-step: fetch + update. Fine for low traffic; replace with RPC if needed.
   const { data } = await supabase
     .from("proposals")
     .select("use_count")
@@ -57,4 +96,9 @@ export async function incrementProposalUseAction(id: string) {
     .update({ use_count: (data.use_count ?? 0) + 1 })
     .eq("id", id);
   revalidatePath("/proposals");
+}
+
+function parseTags(v: FormDataEntryValue | null): string[] {
+  const s = String(v ?? "").trim();
+  return s ? s.split(",").map((t) => t.trim()).filter(Boolean) : [];
 }

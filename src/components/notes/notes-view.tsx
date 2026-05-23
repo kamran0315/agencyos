@@ -1,10 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Pin, Search, StickyNote } from "lucide-react";
-import { format } from "date-fns";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Search, StickyNote } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -14,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { EmptyState } from "@/components/common/empty-state";
+import { NoteCard } from "./note-card";
 import { NOTE_CATEGORY_LABELS, type Note, type NoteCategory } from "@/lib/types";
 
 export function NotesView({ notes }: { notes: Note[] }) {
@@ -108,30 +106,3 @@ export function NotesView({ notes }: { notes: Note[] }) {
   );
 }
 
-function NoteCard({ note }: { note: Note }) {
-  return (
-    <Card className="gap-2 transition-shadow hover:shadow-md">
-      <CardContent className="space-y-2">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <p className="text-sm font-semibold flex items-center gap-1.5">
-              {note.pinned && <Pin className="size-3 text-muted-foreground" />}
-              {note.title}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Updated {format(new Date(note.updated_at), "MMM d, yyyy")}
-            </p>
-          </div>
-          <Badge variant="secondary" className="capitalize">
-            {NOTE_CATEGORY_LABELS[note.category]}
-          </Badge>
-        </div>
-        {note.body && (
-          <p className="line-clamp-4 whitespace-pre-wrap text-xs text-muted-foreground">
-            {note.body}
-          </p>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
