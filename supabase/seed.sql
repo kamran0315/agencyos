@@ -94,7 +94,7 @@ begin
   -- Proposals
   insert into public.proposals (owner_id, title, body, category, tags, use_count) values
     (owner, 'Upwork — Next.js marketing site rebuild',
-$$Hi {{name}},
+$body$Hi {{name}},
 
 I noticed you're rebuilding your marketing site on Next.js — that's exactly what I've done for 30+ agencies and SaaS teams over the last 4 years.
 
@@ -106,30 +106,30 @@ A few quick thoughts on your brief:
 Would love to jump on a 15-min call to align. My calendar: {{link}}
 
 Best,
-{{my_name}}$$,
+{{my_name}}$body$,
       'upwork', array['nextjs','sanity','marketing-site']::text[], 12),
     (owner, 'Fiverr — Shopify custom checkout response',
-$$Hey! Yes, I can absolutely build the custom upsell + bundle logic you're describing.
+$body$Hey! Yes, I can absolutely build the custom upsell + bundle logic you're describing.
 
 Quick clarifying questions:
 1. Are you on Shopify Plus? (Required for checkout.liquid edits)
 2. Do bundles need their own SKU or are they virtual?
 3. Any analytics events you want fired on upsell accept/decline?
 
-If Plus + virtual bundles + GA4 events, my quote is $1,800 with 7-day turnaround. Send the questions back and I'll send a Fiverr offer.$$,
+If Plus + virtual bundles + GA4 events, my quote is $1,800 with 7-day turnaround. Send the questions back and I'll send a Fiverr offer.$body$,
       'fiverr', array['shopify','checkout','upsell']::text[], 7),
     (owner, 'Discovery questions — AI automation projects',
-$$1. What is the current process you'd like to automate, end-to-end?
+$body$1. What is the current process you'd like to automate, end-to-end?
 2. Which tools/systems does it touch today?
 3. What's the volume (per day / week / month)?
 4. What does success look like in 90 days?
 5. Who else on your team needs access?
 6. Any compliance constraints (HIPAA, SOC 2, GDPR)?
 7. Budget range — is this a fixed project or ongoing?
-8. What's already been tried that didn't work?$$,
+8. What's already been tried that didn't work?$body$,
       'discovery', array['ai','discovery','automation']::text[], 18),
     (owner, 'Client onboarding — kickoff email',
-$$Welcome aboard {{name}}!
+$body$Welcome aboard {{name}}!
 
 A few things to get us moving:
 
@@ -138,10 +138,10 @@ A few things to get us moving:
 3. Access — I'll need admin on the domain registrar, hosting, and any CMS we'll be touching. I'll send a credential request via 1Password.
 4. Comms — I default to async (Slack/email) and batch responses 2x/day. For anything urgent, just say "urgent" in the subject.
 
-Excited to build this with you.$$,
+Excited to build this with you.$body$,
       'onboarding', array['onboarding','kickoff','email']::text[], 22),
     (owner, 'Upwork — AI automation / OpenAI integration',
-$$Hi {{name}},
+$body$Hi {{name}},
 
 Building OpenAI-powered tooling is most of what I do these days. A few that are live in production:
 
@@ -154,7 +154,7 @@ For your scope, I'd typically structure it as:
 2. Week 2: integration + observability
 3. Week 3: hardening, fallback handling, handoff
 
-Quote depends on the volume and whether you need a UI. Happy to scope on a call. {{link}}$$,
+Quote depends on the volume and whether you need a UI. Happy to scope on a call. {{link}}$body$,
       'upwork', array['ai','openai','automation']::text[], 9);
 
   -- Notifications
