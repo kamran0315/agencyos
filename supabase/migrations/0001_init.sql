@@ -2,6 +2,7 @@
 -- Run this in Supabase SQL editor (or via `supabase db push`)
 
 create extension if not exists "uuid-ossp";
+create extension if not exists "pg_trgm";
 
 -- =========================================================
 -- USERS (extends auth.users)
