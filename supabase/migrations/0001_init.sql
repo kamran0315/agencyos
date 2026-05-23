@@ -41,10 +41,15 @@ create index if not exists clients_name_trgm on public.clients using gin (name g
 -- =========================================================
 -- PROJECTS
 -- =========================================================
-create type project_status as enum (
-  'discussion','in_progress','waiting_client','revision','completed','cancelled'
-);
-create type priority_level as enum ('low','medium','high','urgent');
+do $$ begin
+  create type project_status as enum (
+    'discussion','in_progress','waiting_client','revision','completed','cancelled'
+  );
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  create type priority_level as enum ('low','medium','high','urgent');
+exception when duplicate_object then null; end $$;
 
 create table if not exists public.projects (
   id uuid primary key default uuid_generate_v4(),
@@ -67,7 +72,9 @@ create index if not exists projects_status_idx on public.projects(status);
 -- =========================================================
 -- TASKS
 -- =========================================================
-create type task_status as enum ('todo','in_progress','review','done');
+do $$ begin
+  create type task_status as enum ('todo','in_progress','review','done');
+exception when duplicate_object then null; end $$;
 
 create table if not exists public.tasks (
   id uuid primary key default uuid_generate_v4(),
@@ -96,9 +103,11 @@ create table if not exists public.task_comments (
 -- =========================================================
 -- NOTES
 -- =========================================================
-create type note_category as enum (
-  'requirement','revision','hosting','credential','meeting','internal'
-);
+do $$ begin
+  create type note_category as enum (
+    'requirement','revision','hosting','credential','meeting','internal'
+  );
+exception when duplicate_object then null; end $$;
 
 create table if not exists public.notes (
   id uuid primary key default uuid_generate_v4(),
@@ -118,9 +127,11 @@ create index if not exists notes_project_idx on public.notes(project_id);
 -- =========================================================
 -- PROPOSALS
 -- =========================================================
-create type proposal_category as enum (
-  'upwork','fiverr','discovery','onboarding','followup'
-);
+do $$ begin
+  create type proposal_category as enum (
+    'upwork','fiverr','discovery','onboarding','followup'
+  );
+exception when duplicate_object then null; end $$;
 
 create table if not exists public.proposals (
   id uuid primary key default uuid_generate_v4(),
@@ -139,9 +150,11 @@ create index if not exists proposals_category_idx on public.proposals(category);
 -- =========================================================
 -- NOTIFICATIONS
 -- =========================================================
-create type notification_type as enum (
-  'deadline','task_assigned','status_change','project_update','client_message'
-);
+do $$ begin
+  create type notification_type as enum (
+    'deadline','task_assigned','status_change','project_update','client_message'
+  );
+exception when duplicate_object then null; end $$;
 
 create table if not exists public.notifications (
   id uuid primary key default uuid_generate_v4(),
