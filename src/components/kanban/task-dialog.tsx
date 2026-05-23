@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Plus, Calendar as CalendarIcon, Paperclip } from "lucide-react";
+import { useState, useTransition } from "react";
+import { Plus, Calendar as CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { createTaskAction, updateTaskAction } from "@/lib/actions/tasks";
 import {
   PRIORITY_LABELS,
   TASK_STATUS_LABELS,
@@ -32,38 +33,43 @@ import {
 } from "@/lib/types";
 
 interface Props {
+  projectId: string;
   task?: Task;
   trigger?: React.ReactNode;
   defaultStatus?: TaskStatus;
-  onSave?: (data: Partial<Task>) => void;
 }
 
-export function TaskDialog({ task, trigger, defaultStatus = "todo", onSave }: Props) {
+export function TaskDialog({ projectId, task, trigger, defaultStatus = "todo" }: Props) {
   const [open, setOpen] = useState(false);
+  const [status, setStatus] = useState<TaskStatus>(task?.status ?? defaultStatus);
+  const [priority, setPriority] = useState<Priority>(task?.priority ?? "medium");
+  const [pending, startTransition] = useTransition();
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const form = new FormData(e.currentTarget);
-    onSave?.({
-      title: String(form.get("title") ?? ""),
-      description: String(form.get("description") ?? ""),
-      status: form.get("status") as TaskStatus,
-      priority: form.get("priority") as Priority,
-      due_date: (form.get("due_date") as string) || null,
+    const formData = new FormData(e.currentTarget);
+    formData.set("status", status);
+    formData.set("priority", priority);
+    startTransition(async () => {
+      const result = task
+        ? await updateTaskAction(task.id, projectId, formData)
+        : await createTaskAction(projectId, formData);
+      if (result.ok) {
+        toast.success(task ? "Task updated" : "Task created");
+        setOpen(false);
+      } else {
+        toast.error(result.error);
+      }
     });
-    toast.success(task ? "Task updated" : "Task created", {
-      description: "Demo mode — changes are kept in memory only.",
-    });
-    setOpen(false);
   }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {trigger ?? (
-          <Button size="sm" variant="ghost" className="w-full justify-start">
+          <Button size="sm">
             <Plus className="size-4" />
-            Add task
+            New task
           </Button>
         )}
       </DialogTrigger>
@@ -99,9 +105,9 @@ export function TaskDialog({ task, trigger, defaultStatus = "todo", onSave }: Pr
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select name="status" defaultValue={task?.status ?? defaultStatus}>
-                <SelectTrigger id="status" className="w-full">
+              <Label>Status</Label>
+              <Select value={status} onValueChange={(v) => setStatus(v as TaskStatus)}>
+                <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -116,9 +122,9 @@ export function TaskDialog({ task, trigger, defaultStatus = "todo", onSave }: Pr
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="priority">Priority</Label>
-              <Select name="priority" defaultValue={task?.priority ?? "medium"}>
-                <SelectTrigger id="priority" className="w-full">
+              <Label>Priority</Label>
+              <Select value={priority} onValueChange={(v) => setPriority(v as Priority)}>
+                <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -133,30 +139,24 @@ export function TaskDialog({ task, trigger, defaultStatus = "todo", onSave }: Pr
               </Select>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="due_date">
-                <CalendarIcon className="size-3.5" /> Due date
-              </Label>
-              <Input
-                id="due_date"
-                name="due_date"
-                type="date"
-                defaultValue={task?.due_date ?? ""}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>
-                <Paperclip className="size-3.5" /> Attachment
-              </Label>
-              <Input type="file" disabled className="cursor-not-allowed" />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="due_date">
+              <CalendarIcon className="size-3.5" /> Due date
+            </Label>
+            <Input
+              id="due_date"
+              name="due_date"
+              type="date"
+              defaultValue={task?.due_date ?? ""}
+            />
           </div>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit">{task ? "Save changes" : "Create task"}</Button>
+            <Button type="submit" disabled={pending}>
+              {pending ? "Saving…" : task ? "Save changes" : "Create task"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

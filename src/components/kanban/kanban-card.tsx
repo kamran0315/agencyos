@@ -10,7 +10,13 @@ import { TaskDialog } from "./task-dialog";
 import type { Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-export function KanbanCard({ task }: { task: Task }) {
+export function KanbanCard({
+  task,
+  projectId,
+}: {
+  task: Task;
+  projectId: string;
+}) {
   const {
     attributes,
     listeners,
@@ -30,15 +36,13 @@ export function KanbanCard({ task }: { task: Task }) {
 
   return (
     <TaskDialog
+      projectId={projectId}
       task={task}
       trigger={
         <div
           ref={setNodeRef}
           style={style}
-          className={cn(
-            "touch-none select-none",
-            isDragging && "opacity-50"
-          )}
+          className={cn("touch-none select-none", isDragging && "opacity-50")}
           {...attributes}
           {...listeners}
         >

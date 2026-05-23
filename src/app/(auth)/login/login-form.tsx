@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 
-export function LoginForm() {
+export function LoginForm({ demoMode }: { demoMode: boolean }) {
   const [state, formAction, pending] = useActionState<AuthState, FormData>(
     signIn,
     undefined
@@ -23,7 +23,7 @@ export function LoginForm() {
           type="email"
           placeholder="you@agency.com"
           autoComplete="email"
-          defaultValue="demo@agencyos.app"
+          defaultValue={demoMode ? "demo@agencyos.app" : ""}
           required
         />
       </div>
@@ -34,7 +34,7 @@ export function LoginForm() {
           name="password"
           type="password"
           autoComplete="current-password"
-          defaultValue="demo"
+          defaultValue={demoMode ? "demo" : ""}
           required
         />
       </div>

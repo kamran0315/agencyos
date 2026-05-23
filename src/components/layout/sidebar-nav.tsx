@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { mockNotifications } from "@/lib/mock-data";
 
 const items = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -34,9 +33,9 @@ const bottomItems = [
   { href: "/settings", label: "Settings", icon: Settings },
 ] as const;
 
-export function SidebarNav() {
+export function SidebarNav({ unreadCount = 0 }: { unreadCount?: number }) {
   const pathname = usePathname();
-  const unread = mockNotifications.filter((n) => !n.read).length;
+  const unread = unreadCount;
 
   return (
     <aside className="hidden md:flex w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">

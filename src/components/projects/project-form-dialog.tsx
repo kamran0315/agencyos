@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -23,23 +23,42 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { mockClients } from "@/lib/mock-data";
+import { createProjectAction } from "@/lib/actions/projects";
 import {
   PRIORITY_LABELS,
   PROJECT_STATUS_LABELS,
+  type Client,
   type Priority,
   type ProjectStatus,
 } from "@/lib/types";
 
-export function ProjectFormDialog({ trigger }: { trigger?: React.ReactNode }) {
+interface Props {
+  trigger?: React.ReactNode;
+  clients: Client[];
+}
+
+export function ProjectFormDialog({ trigger, clients }: Props) {
   const [open, setOpen] = useState(false);
+  const [clientId, setClientId] = useState<string>("");
+  const [status, setStatus] = useState<ProjectStatus>("discussion");
+  const [priority, setPriority] = useState<Priority>("medium");
+  const [pending, startTransition] = useTransition();
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    toast.success("Project created", {
-      description: "Demo mode — no record was persisted.",
+    const formData = new FormData(e.currentTarget);
+    formData.set("client", clientId);
+    formData.set("status", status);
+    formData.set("priority", priority);
+    startTransition(async () => {
+      const result = await createProjectAction(formData);
+      if (result.ok) {
+        toast.success("Project created");
+        setOpen(false);
+      } else {
+        toast.error(result.error);
+      }
     });
-    setOpen(false);
   }
 
   return (
@@ -62,16 +81,16 @@ export function ProjectFormDialog({ trigger }: { trigger?: React.ReactNode }) {
         <form onSubmit={handleSubmit} className="grid gap-4">
           <div className="space-y-2">
             <Label htmlFor="title">Project title</Label>
-            <Input id="title" required placeholder="e.g. Marketing site rebuild" />
+            <Input id="title" name="title" required placeholder="e.g. Marketing site rebuild" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="client">Client</Label>
-            <Select>
+            <Select value={clientId} onValueChange={setClientId}>
               <SelectTrigger id="client" className="w-full">
-                <SelectValue placeholder="Select a client" />
+                <SelectValue placeholder="Select a client (optional)" />
               </SelectTrigger>
               <SelectContent>
-                {mockClients.map((c) => (
+                {clients.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
                     {c.name}
                     {c.company ? ` — ${c.company}` : ""}
@@ -82,27 +101,26 @@ export function ProjectFormDialog({ trigger }: { trigger?: React.ReactNode }) {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select defaultValue="discussion">
-                <SelectTrigger id="status" className="w-full">
+              <Label>Status</Label>
+              <Select value={status} onValueChange={(v) => setStatus(v as ProjectStatus)}>
+                <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {(Object.entries(PROJECT_STATUS_LABELS) as [
-                    ProjectStatus,
-                    string
-                  ][]).map(([k, v]) => (
-                    <SelectItem key={k} value={k}>
-                      {v}
-                    </SelectItem>
-                  ))}
+                  {(Object.entries(PROJECT_STATUS_LABELS) as [ProjectStatus, string][]).map(
+                    ([k, v]) => (
+                      <SelectItem key={k} value={k}>
+                        {v}
+                      </SelectItem>
+                    )
+                  )}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="priority">Priority</Label>
-              <Select defaultValue="medium">
-                <SelectTrigger id="priority" className="w-full">
+              <Label>Priority</Label>
+              <Select value={priority} onValueChange={(v) => setPriority(v as Priority)}>
+                <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -120,17 +138,18 @@ export function ProjectFormDialog({ trigger }: { trigger?: React.ReactNode }) {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="budget">Budget (USD)</Label>
-              <Input id="budget" type="number" placeholder="5000" />
+              <Input id="budget" name="budget" type="number" placeholder="5000" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="deadline">Deadline</Label>
-              <Input id="deadline" type="date" />
+              <Input id="deadline" name="deadline" type="date" />
             </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
+              name="description"
               rows={3}
               placeholder="What's the goal of this project?"
             />
@@ -139,7 +158,9 @@ export function ProjectFormDialog({ trigger }: { trigger?: React.ReactNode }) {
             <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit">Create project</Button>
+            <Button type="submit" disabled={pending}>
+              {pending ? "Creating…" : "Create project"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

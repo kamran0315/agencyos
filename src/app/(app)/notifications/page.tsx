@@ -4,11 +4,11 @@ import { Bell, Circle } from "lucide-react";
 import { PageHeader } from "@/components/common/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/common/empty-state";
-import { mockNotifications } from "@/lib/mock-data";
+import { listNotifications } from "@/lib/data/notifications";
 import { cn } from "@/lib/utils";
 
-export default function NotificationsPage() {
-  const items = mockNotifications;
+export default async function NotificationsPage() {
+  const items = await listNotifications();
   return (
     <div>
       <PageHeader

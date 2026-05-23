@@ -1,9 +1,10 @@
 import { PageHeader } from "@/components/common/page-header";
 import { ProposalList } from "@/components/proposals/proposal-list";
 import { AIGeneratorDialog } from "@/components/proposals/ai-generator-dialog";
-import { mockProposals } from "@/lib/mock-data";
+import { listProposals } from "@/lib/data/proposals";
 
-export default function ProposalsPage() {
+export default async function ProposalsPage() {
+  const proposals = await listProposals();
   return (
     <div>
       <PageHeader
@@ -13,7 +14,7 @@ export default function ProposalsPage() {
         <AIGeneratorDialog />
       </PageHeader>
       <div className="p-6">
-        <ProposalList proposals={mockProposals} />
+        <ProposalList proposals={proposals} />
       </div>
     </div>
   );

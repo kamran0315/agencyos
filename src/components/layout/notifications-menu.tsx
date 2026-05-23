@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { Bell, Circle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
@@ -9,11 +7,11 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { mockNotifications } from "@/lib/mock-data";
+import { listNotifications } from "@/lib/data/notifications";
 import { cn } from "@/lib/utils";
 
-export function NotificationsMenu() {
-  const items = mockNotifications;
+export async function NotificationsMenu() {
+  const items = await listNotifications();
   const unread = items.filter((n) => !n.read).length;
 
   return (
@@ -49,7 +47,9 @@ export function NotificationsMenu() {
                 <Circle
                   className={cn(
                     "mt-1.5 size-2 shrink-0",
-                    n.read ? "fill-transparent text-muted-foreground/40" : "fill-primary text-primary"
+                    n.read
+                      ? "fill-transparent text-muted-foreground/40"
+                      : "fill-primary text-primary"
                   )}
                 />
                 <div className="min-w-0 flex-1">

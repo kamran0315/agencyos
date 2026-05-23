@@ -13,13 +13,21 @@ import {
   type DragOverEvent,
 } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
+import { toast } from "sonner";
 import { KanbanColumn } from "./kanban-column";
 import { KanbanCard } from "./kanban-card";
+import { moveTaskAction } from "@/lib/actions/tasks";
 import { type Task, type TaskStatus } from "@/lib/types";
 
 const STATUSES: TaskStatus[] = ["todo", "in_progress", "review", "done"];
 
-export function KanbanBoard({ initialTasks }: { initialTasks: Task[] }) {
+export function KanbanBoard({
+  initialTasks,
+  projectId,
+}: {
+  initialTasks: Task[];
+  projectId: string;
+}) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [activeId, setActiveId] = useState<string | null>(null);
 
@@ -65,22 +73,25 @@ export function KanbanBoard({ initialTasks }: { initialTasks: Task[] }) {
     );
   }
 
-  function handleDragEnd(event: DragEndEvent) {
+  async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     setActiveId(null);
     if (!over) return;
 
-    const activeId = String(active.id);
+    const activeIdStr = String(active.id);
     const overId = String(over.id);
-    const fromCol = findTaskColumn(activeId);
+    const fromCol = findTaskColumn(activeIdStr);
     const toCol = findTaskColumn(overId);
     if (!fromCol || !toCol) return;
+
+    let finalStatus: TaskStatus = toCol;
+    let finalPosition = 0;
 
     setTasks((prev) => {
       const colTasks = prev
         .filter((t) => t.status === toCol)
         .sort((a, b) => a.position - b.position);
-      const activeIndex = colTasks.findIndex((t) => t.id === activeId);
+      const activeIndex = colTasks.findIndex((t) => t.id === activeIdStr);
       const overIndex = colTasks.findIndex((t) => t.id === overId);
 
       let reordered = colTasks;
@@ -88,10 +99,18 @@ export function KanbanBoard({ initialTasks }: { initialTasks: Task[] }) {
         reordered = arrayMove(colTasks, activeIndex, overIndex);
       }
       const positions = new Map(reordered.map((t, i) => [t.id, i]));
+      finalPosition = positions.get(activeIdStr) ?? 0;
+      finalStatus = toCol;
       return prev.map((t) =>
         positions.has(t.id) ? { ...t, position: positions.get(t.id)! } : t
       );
     });
+
+    // Persist the move (no-op in demo mode).
+    const result = await moveTaskAction(activeIdStr, finalStatus, finalPosition);
+    if (!result.ok) {
+      toast.error(`Failed to save: ${result.error}`);
+    }
   }
 
   const activeTask = activeId ? tasks.find((t) => t.id === activeId) : null;
@@ -110,6 +129,7 @@ export function KanbanBoard({ initialTasks }: { initialTasks: Task[] }) {
             key={status}
             status={status}
             tasks={tasksByStatus[status]}
+            projectId={projectId}
           />
         ))}
       </div>
@@ -117,7 +137,7 @@ export function KanbanBoard({ initialTasks }: { initialTasks: Task[] }) {
       <DragOverlay>
         {activeTask && (
           <div className="w-72 rotate-1">
-            <KanbanCard task={activeTask} />
+            <KanbanCard task={activeTask} projectId={projectId} />
           </div>
         )}
       </DragOverlay>

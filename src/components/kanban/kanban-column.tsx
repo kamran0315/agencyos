@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 interface Props {
   status: TaskStatus;
   tasks: Task[];
+  projectId: string;
 }
 
 const statusAccent: Record<TaskStatus, string> = {
@@ -22,7 +23,7 @@ const statusAccent: Record<TaskStatus, string> = {
   done: "bg-emerald-500",
 };
 
-export function KanbanColumn({ status, tasks }: Props) {
+export function KanbanColumn({ status, tasks, projectId }: Props) {
   const { setNodeRef, isOver } = useDroppable({
     id: status,
     data: { type: "column", status },
@@ -41,6 +42,7 @@ export function KanbanColumn({ status, tasks }: Props) {
           </Badge>
         </div>
         <TaskDialog
+          projectId={projectId}
           defaultStatus={status}
           trigger={
             <Button variant="ghost" size="icon" className="size-7">
@@ -62,7 +64,7 @@ export function KanbanColumn({ status, tasks }: Props) {
           strategy={verticalListSortingStrategy}
         >
           {tasks.map((task) => (
-            <KanbanCard key={task.id} task={task} />
+            <KanbanCard key={task.id} task={task} projectId={projectId} />
           ))}
         </SortableContext>
         {tasks.length === 0 && (

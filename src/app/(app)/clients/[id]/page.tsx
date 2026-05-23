@@ -19,12 +19,10 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import {
-  getClient,
-  getProjectsByClient,
-  mockNotes,
-  mockFiles,
-} from "@/lib/mock-data";
+import { getClientById } from "@/lib/data/clients";
+import { listProjectsByClient } from "@/lib/data/projects";
+import { listNotesByClient } from "@/lib/data/notes";
+import { listFilesByClient } from "@/lib/data/files";
 import { formatCurrency, getInitials } from "@/lib/utils";
 import { format } from "date-fns";
 
@@ -34,12 +32,15 @@ export default async function ClientDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const client = getClient(id);
+  const client = await getClientById(id);
   if (!client) notFound();
 
-  const projects = getProjectsByClient(client.id);
-  const notes = mockNotes.filter((n) => n.client_id === client.id);
-  const files = mockFiles.filter((f) => f.client_id === client.id);
+  const [projects, notes, files] = await Promise.all([
+    listProjectsByClient(client.id),
+    listNotesByClient(client.id),
+    listFilesByClient(client.id),
+  ]);
+
   const totalValue = projects.reduce((s, p) => s + (p.budget ?? 0), 0);
 
   return (
@@ -65,9 +66,7 @@ export default async function ClientDetailPage({
               <div>
                 <p className="font-semibold">{client.name}</p>
                 {client.company && (
-                  <p className="text-sm text-muted-foreground">
-                    {client.company}
-                  </p>
+                  <p className="text-sm text-muted-foreground">{client.company}</p>
                 )}
               </div>
             </div>
@@ -115,9 +114,7 @@ export default async function ClientDetailPage({
                             className="flex items-center gap-4 px-6 py-3 transition-colors hover:bg-accent/40"
                           >
                             <div className="min-w-0 flex-1">
-                              <p className="truncate text-sm font-medium">
-                                {p.title}
-                              </p>
+                              <p className="truncate text-sm font-medium">{p.title}</p>
                               <p className="text-xs text-muted-foreground">
                                 Budget {p.budget ? formatCurrency(p.budget) : "—"} ·{" "}
                                 {p.deadline ? format(new Date(p.deadline), "MMM d") : "no deadline"}
@@ -142,15 +139,10 @@ export default async function ClientDetailPage({
                     </p>
                   ) : (
                     notes.map((n) => (
-                      <div
-                        key={n.id}
-                        className="rounded-lg border border-border p-3"
-                      >
+                      <div key={n.id} className="rounded-lg border border-border p-3">
                         <div className="flex items-center justify-between">
                           <p className="text-sm font-medium">{n.title}</p>
-                          <p className="text-xs text-muted-foreground capitalize">
-                            {n.category}
-                          </p>
+                          <p className="text-xs text-muted-foreground capitalize">{n.category}</p>
                         </div>
                         {n.body && (
                           <p className="mt-1 text-sm text-muted-foreground whitespace-pre-wrap">
@@ -174,14 +166,9 @@ export default async function ClientDetailPage({
                   ) : (
                     <ul className="divide-y divide-border">
                       {files.map((f) => (
-                        <li
-                          key={f.id}
-                          className="flex items-center justify-between py-2.5"
-                        >
+                        <li key={f.id} className="flex items-center justify-between py-2.5">
                           <div className="min-w-0">
-                            <p className="truncate text-sm font-medium">
-                              {f.name}
-                            </p>
+                            <p className="truncate text-sm font-medium">{f.name}</p>
                             <p className="text-xs text-muted-foreground">
                               {f.size_bytes ? (f.size_bytes / 1024 / 1024).toFixed(2) + " MB" : ""}
                             </p>
@@ -226,12 +213,7 @@ function ContactRow({
     <div className="flex items-center gap-2.5">
       <Icon className="size-4 text-muted-foreground" />
       {link ? (
-        <a
-          href={link}
-          target="_blank"
-          rel="noreferrer"
-          className="truncate hover:underline"
-        >
+        <a href={link} target="_blank" rel="noreferrer" className="truncate hover:underline">
           {value}
         </a>
       ) : (

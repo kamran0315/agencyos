@@ -21,26 +21,29 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ProjectStatusBadge } from "@/components/common/status-badge";
-import {
-  mockProjects,
-  mockTasks,
-  mockClients,
-  mockNotifications,
-  getClient,
-} from "@/lib/mock-data";
+import { listProjects } from "@/lib/data/projects";
+import { listClients } from "@/lib/data/clients";
+import { listTasks } from "@/lib/data/tasks";
+import { listNotifications } from "@/lib/data/notifications";
 import { formatCurrency } from "@/lib/utils";
 
-export default function DashboardPage() {
-  const activeProjects = mockProjects.filter(
+export default async function DashboardPage() {
+  const [projects, clients, tasks, notifications] = await Promise.all([
+    listProjects(),
+    listClients(),
+    listTasks(),
+    listNotifications(),
+  ]);
+
+  const clientById = Object.fromEntries(clients.map((c) => [c.id, c]));
+  const activeProjects = projects.filter(
     (p) => p.status === "in_progress" || p.status === "revision"
   );
-  const pendingTasks = mockTasks.filter((t) => t.status !== "done");
-  const totalRevenue = mockProjects.reduce((s, p) => s + (p.budget ?? 0), 0);
-  const upcomingDeadlines = [...mockProjects]
+  const pendingTasks = tasks.filter((t) => t.status !== "done");
+  const totalRevenue = projects.reduce((s, p) => s + (p.budget ?? 0), 0);
+  const upcomingDeadlines = [...projects]
     .filter((p) => p.deadline && p.status !== "completed" && p.status !== "cancelled")
-    .sort((a, b) =>
-      (a.deadline ?? "").localeCompare(b.deadline ?? "")
-    )
+    .sort((a, b) => (a.deadline ?? "").localeCompare(b.deadline ?? ""))
     .slice(0, 5);
 
   return (
@@ -50,7 +53,7 @@ export default function DashboardPage() {
         description="What's happening across your agency today."
       >
         <Button asChild>
-          <Link href="/projects/new">New project</Link>
+          <Link href="/projects">New project</Link>
         </Button>
       </PageHeader>
 
@@ -64,7 +67,7 @@ export default function DashboardPage() {
         />
         <StatCard
           label="Total clients"
-          value={mockClients.length}
+          value={clients.length}
           icon={Users}
           trend={8}
           hint="vs last month"
@@ -104,16 +107,15 @@ export default function DashboardPage() {
             <CardDescription>Next 5 projects due</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
+            {upcomingDeadlines.length === 0 && (
+              <p className="text-sm text-muted-foreground">No upcoming deadlines.</p>
+            )}
             {upcomingDeadlines.map((p) => {
-              const client = p.client_id ? getClient(p.client_id) : null;
+              const client = p.client_id ? clientById[p.client_id] : null;
               const due = p.deadline ? parseISO(p.deadline) : null;
               const overdue = due ? isBefore(due, new Date()) : false;
               return (
-                <Link
-                  key={p.id}
-                  href={`/projects/${p.id}`}
-                  className="block group"
-                >
+                <Link key={p.id} href={`/projects/${p.id}`} className="block group">
                   <div className="flex items-start gap-3 rounded-lg border border-border p-3 transition-colors hover:bg-accent/50">
                     <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted">
                       <Calendar className="size-4 text-muted-foreground" />
@@ -129,9 +131,7 @@ export default function DashboardPage() {
                     <span
                       className={
                         "text-xs font-medium " +
-                        (overdue
-                          ? "text-destructive"
-                          : "text-muted-foreground")
+                        (overdue ? "text-destructive" : "text-muted-foreground")
                       }
                     >
                       {due ? format(due, "MMM d") : "—"}
@@ -149,9 +149,7 @@ export default function DashboardPage() {
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle>Active projects</CardTitle>
-              <CardDescription>
-                In progress or awaiting revision
-              </CardDescription>
+              <CardDescription>In progress or awaiting revision</CardDescription>
             </div>
             <Button asChild variant="ghost" size="sm">
               <Link href="/projects">
@@ -160,32 +158,36 @@ export default function DashboardPage() {
             </Button>
           </CardHeader>
           <CardContent>
-            <ul className="divide-y divide-border">
-              {activeProjects.map((p) => {
-                const client = p.client_id ? getClient(p.client_id) : null;
-                return (
-                  <li key={p.id}>
-                    <Link
-                      href={`/projects/${p.id}`}
-                      className="flex items-center gap-4 py-3 transition-colors"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium">
-                          {p.title}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {client?.company ?? "—"}
-                        </p>
-                      </div>
-                      <div className="hidden text-xs text-muted-foreground sm:block w-24">
-                        {p.progress}% complete
-                      </div>
-                      <ProjectStatusBadge status={p.status} />
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
+            {activeProjects.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-2">
+                No active projects yet — create your first one to get started.
+              </p>
+            ) : (
+              <ul className="divide-y divide-border">
+                {activeProjects.map((p) => {
+                  const client = p.client_id ? clientById[p.client_id] : null;
+                  return (
+                    <li key={p.id}>
+                      <Link
+                        href={`/projects/${p.id}`}
+                        className="flex items-center gap-4 py-3"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium">{p.title}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {client?.company ?? "—"}
+                          </p>
+                        </div>
+                        <div className="hidden text-xs text-muted-foreground sm:block w-24">
+                          {p.progress}% complete
+                        </div>
+                        <ProjectStatusBadge status={p.status} />
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </CardContent>
         </Card>
 
@@ -195,7 +197,10 @@ export default function DashboardPage() {
             <CardDescription>Across all projects</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {mockNotifications.slice(0, 5).map((n) => (
+            {notifications.length === 0 && (
+              <p className="text-sm text-muted-foreground">Nothing yet.</p>
+            )}
+            {notifications.slice(0, 5).map((n) => (
               <div key={n.id} className="flex gap-2.5">
                 <Circle className="mt-1 size-2 shrink-0 fill-muted-foreground text-muted-foreground" />
                 <div className="min-w-0">

@@ -1,9 +1,14 @@
 import { PageHeader } from "@/components/common/page-header";
 import { ClientList } from "@/components/clients/client-list";
 import { ClientFormDialog } from "@/components/clients/client-form-dialog";
-import { mockClients, mockProjects } from "@/lib/mock-data";
+import { listClients } from "@/lib/data/clients";
+import { listProjects } from "@/lib/data/projects";
 
-export default function ClientsPage() {
+export default async function ClientsPage() {
+  const [clients, projects] = await Promise.all([
+    listClients(),
+    listProjects(),
+  ]);
   return (
     <div>
       <PageHeader
@@ -13,7 +18,7 @@ export default function ClientsPage() {
         <ClientFormDialog />
       </PageHeader>
       <div className="p-6">
-        <ClientList clients={mockClients} projects={mockProjects} />
+        <ClientList clients={clients} projects={projects} />
       </div>
     </div>
   );

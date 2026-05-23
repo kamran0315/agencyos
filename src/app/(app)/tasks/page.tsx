@@ -6,15 +6,19 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PriorityBadge } from "@/components/common/status-badge";
 import { EmptyState } from "@/components/common/empty-state";
-import { mockProjects, mockTasks } from "@/lib/mock-data";
-import { TASK_STATUS_LABELS } from "@/lib/types";
+import { listTasks } from "@/lib/data/tasks";
+import { listProjects } from "@/lib/data/projects";
+import { TASK_STATUS_LABELS, type Task, type TaskStatus } from "@/lib/types";
 
-export default function TasksPage() {
-  const grouped = {
-    todo: mockTasks.filter((t) => t.status === "todo"),
-    in_progress: mockTasks.filter((t) => t.status === "in_progress"),
-    review: mockTasks.filter((t) => t.status === "review"),
-    done: mockTasks.filter((t) => t.status === "done"),
+export default async function TasksPage() {
+  const [tasks, projects] = await Promise.all([listTasks(), listProjects()]);
+  const projectById = Object.fromEntries(projects.map((p) => [p.id, p]));
+
+  const grouped: Record<TaskStatus, Task[]> = {
+    todo: tasks.filter((t) => t.status === "todo"),
+    in_progress: tasks.filter((t) => t.status === "in_progress"),
+    review: tasks.filter((t) => t.status === "review"),
+    done: tasks.filter((t) => t.status === "done"),
   };
 
   return (
@@ -24,17 +28,17 @@ export default function TasksPage() {
         description="All tasks across every project, grouped by status."
       />
       <div className="grid gap-4 p-6 lg:grid-cols-2">
-        {(Object.entries(grouped) as [keyof typeof grouped, typeof mockTasks][]).map(
-          ([status, tasks]) => (
+        {(Object.entries(grouped) as [TaskStatus, Task[]][]).map(
+          ([status, statusTasks]) => (
             <Card key={status}>
               <CardContent>
                 <div className="mb-3 flex items-center justify-between">
                   <h3 className="text-sm font-semibold">
                     {TASK_STATUS_LABELS[status]}
                   </h3>
-                  <Badge variant="secondary">{tasks.length}</Badge>
+                  <Badge variant="secondary">{statusTasks.length}</Badge>
                 </div>
-                {tasks.length === 0 ? (
+                {statusTasks.length === 0 ? (
                   <EmptyState
                     icon={CheckSquare}
                     title="Nothing here yet"
@@ -42,8 +46,8 @@ export default function TasksPage() {
                   />
                 ) : (
                   <ul className="space-y-2">
-                    {tasks.map((t) => {
-                      const project = mockProjects.find((p) => p.id === t.project_id);
+                    {statusTasks.map((t) => {
+                      const project = projectById[t.project_id];
                       return (
                         <li key={t.id}>
                           <Link

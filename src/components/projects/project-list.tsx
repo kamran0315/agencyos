@@ -105,7 +105,7 @@ export function ProjectList({ projects, clients }: Props) {
           icon={FolderKanban}
           title="No projects match"
           description="Try clearing the filters or create a new project."
-          action={<ProjectFormDialog />}
+          action={<ProjectFormDialog clients={clients} />}
         />
       ) : (
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">

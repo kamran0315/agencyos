@@ -1,11 +1,9 @@
-"use client";
-
 import { Search } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { NotificationsMenu } from "./notifications-menu";
 import { UserMenu } from "./user-menu";
 
-export function Topbar() {
+export async function Topbar() {
   return (
     <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-border bg-background/80 px-4 backdrop-blur-md md:px-6">
       <div className="relative flex-1 max-w-md">

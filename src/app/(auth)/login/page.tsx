@@ -17,7 +17,7 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <LoginForm />
+        <LoginForm demoMode={isDemoMode} />
 
         {isDemoMode && (
           <p className="text-center text-xs text-muted-foreground">

@@ -15,13 +15,11 @@ import {
 } from "@/components/ui/tabs";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { TaskDialog } from "@/components/kanban/task-dialog";
-import {
-  getClient,
-  getFilesByProject,
-  getNotesByProject,
-  getProject,
-  getTasksByProject,
-} from "@/lib/mock-data";
+import { getProjectById } from "@/lib/data/projects";
+import { getClientById } from "@/lib/data/clients";
+import { listTasksByProject } from "@/lib/data/tasks";
+import { listNotesByProject } from "@/lib/data/notes";
+import { listFilesByProject } from "@/lib/data/files";
 import { formatCurrency } from "@/lib/utils";
 
 export default async function ProjectDetailPage({
@@ -30,13 +28,15 @@ export default async function ProjectDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const project = getProject(id);
+  const project = await getProjectById(id);
   if (!project) notFound();
 
-  const client = project.client_id ? getClient(project.client_id) : null;
-  const tasks = getTasksByProject(project.id);
-  const notes = getNotesByProject(project.id);
-  const files = getFilesByProject(project.id);
+  const [client, tasks, notes, files] = await Promise.all([
+    project.client_id ? getClientById(project.client_id) : Promise.resolve(null),
+    listTasksByProject(project.id),
+    listNotesByProject(project.id),
+    listFilesByProject(project.id),
+  ]);
 
   return (
     <div>
@@ -47,7 +47,7 @@ export default async function ProjectDetailPage({
             All projects
           </Link>
         </Button>
-        <TaskDialog />
+        <TaskDialog projectId={project.id} />
       </PageHeader>
 
       <div className="grid gap-4 p-6 lg:grid-cols-4">
@@ -127,7 +127,7 @@ export default async function ProjectDetailPage({
           </TabsList>
 
           <TabsContent value="board" className="mt-4">
-            <KanbanBoard initialTasks={tasks} />
+            <KanbanBoard projectId={project.id} initialTasks={tasks} />
           </TabsContent>
 
           <TabsContent value="notes" className="mt-4">
@@ -139,10 +139,7 @@ export default async function ProjectDetailPage({
                   </p>
                 ) : (
                   notes.map((n) => (
-                    <div
-                      key={n.id}
-                      className="rounded-lg border border-border p-3"
-                    >
+                    <div key={n.id} className="rounded-lg border border-border p-3">
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-medium">{n.title}</p>
                         <p className="text-xs text-muted-foreground capitalize">
@@ -171,10 +168,7 @@ export default async function ProjectDetailPage({
                 ) : (
                   <ul className="divide-y divide-border">
                     {files.map((f) => (
-                      <li
-                        key={f.id}
-                        className="flex items-center justify-between py-2.5"
-                      >
+                      <li key={f.id} className="flex items-center justify-between py-2.5">
                         <div className="min-w-0">
                           <p className="truncate text-sm font-medium">{f.name}</p>
                           <p className="text-xs text-muted-foreground">
